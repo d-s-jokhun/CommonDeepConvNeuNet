@@ -24,6 +24,7 @@ def ImportImage (path, ScaleFactor=1, ImgSize=0):
         return
     
     img = cv2.resize(img, (W,H))
+    img = np.subtract(img, np.amin(img))
     img = np.divide(img, np.amax(img))
 
     
