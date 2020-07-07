@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 import numpy as np
@@ -9,13 +9,16 @@ import cv2
 import math
 
 
-# In[3]:
+# In[4]:
 
 
 
-def ImportImage (path, ScaleFactor=1, ImgSize=0):
-       
-    img = cv2.imread(path, cv2.IMREAD_UNCHANGED).astype(np.float32)
+def Import_Img (path, ScaleFactor=1, ImgSize=0, GrayScale=0):
+    
+    if GrayScale==0:
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    elif GrayScale==1:
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED).astype(np.float32)
         
     W = math.floor(img.shape[1] * ScaleFactor)
     H = math.floor(img.shape[0] * ScaleFactor)
@@ -24,9 +27,12 @@ def ImportImage (path, ScaleFactor=1, ImgSize=0):
         return
     
     img = cv2.resize(img, (W,H))
-    img = np.subtract(img, np.amin(img))
-    img = np.divide(img, np.amax(img))
-
+    
+    if GrayScale==1:
+        bw = img>0
+        img = np.subtract(img, np.amin(img))
+        img = np.divide(img, np.amax(img))
+        img = img*bw
     
     width_to_pad=ImgSize-img.shape[1]
     height_to_pad=ImgSize-img.shape[0]
@@ -49,34 +55,12 @@ def ImportImage (path, ScaleFactor=1, ImgSize=0):
     return img
 
 
-# In[41]:
+# In[5]:
 
 
-
-def DataPartition(FullSet, Partition=[0.6,0.2,0.2], RanSeed=None):
-    assert np.sum(Partition)<=1
-    np.random.seed(RanSeed)
-    l = len(FullSet)
-    new_order = np.random.choice(FullSet, size = l, replace = False)
-
-    Tr_MaxIdx = np.ceil(l*Partition[0]).astype(np.int)
-    Dev_MaxIdx = np.ceil(l*(Partition[0]+Partition[1])).astype(np.int)
-    Ts_MaxIdx = np.ceil(l*(Partition[0]+Partition[1]+Partition[2])).astype(np.int)
-
-    Tr_Set = new_order[0:Tr_MaxIdx]
-    Dev_Set = new_order[Tr_MaxIdx:Dev_MaxIdx]
-    Ts_Set = new_order[Dev_MaxIdx:Ts_MaxIdx]
-    
-    return Tr_Set, Dev_Set, Ts_Set
-
-
-# In[ ]:
-
-
-# In[ ]:
-
-
-
+def Import_GrayImg (path, ScaleFactor=1, ImgSize=0, GrayScale=1):
+    img = Import_Img (path, ScaleFactor=ScaleFactor, ImgSize=ImgSize, GrayScale=GrayScale)
+    return img
 
 
 # In[ ]:
