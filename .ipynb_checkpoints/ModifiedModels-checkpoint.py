@@ -198,7 +198,7 @@ def mod_Xception (NumOfClasses, NumOfInputCh=1, ImgSize=224, Weights=None, Inclu
     )
     
     Xception=keras.applications.Xception(
-        include_top=True,
+        include_top=Include_Top,
         weights=Weights,
         input_tensor=Preprocess.outputs[0],
         input_shape=None,
