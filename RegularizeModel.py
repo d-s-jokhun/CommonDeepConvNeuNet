@@ -38,14 +38,18 @@ def RegularizeModel(model, regularizer, keep_weights=True):
         model = tf.keras.models.Model.from_config(model.get_config()) # recreates the model from the updated config file
     
 #     Compiling the model using parameters obtained before reloading the updated model
-    model.compile(
-        optimizer = optimizer,
-        loss = loss,
-        metrics = metrics,
-        loss_weights = loss_weights,
-        weighted_metrics = weighted_metrics,
-        run_eagerly = run_eagerly
-    )
+    if optimizer!=None:
+        model.compile(
+            optimizer = optimizer,
+            loss = loss,
+            metrics = metrics,
+            loss_weights = loss_weights,
+            weighted_metrics = weighted_metrics,
+            run_eagerly = run_eagerly
+        )
+        print ('Regularization successfully edited and model recompiled!')
+    else:
+        print ('Regularization successfully edited!')
        
     return model
 
