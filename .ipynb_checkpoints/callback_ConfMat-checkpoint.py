@@ -1,6 +1,24 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[1]:
+
+
+# readme
+
+# import datetime
+# import os
+# import tensorflow as tf
+
+# sess_DateTime = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
+# ConfMat_Path = os.path.join(Model_Path,"logs",(model.name+'_'+sess_DateTime))
+# log_confusion_matrix=callback_ConfMat(model=model, X=X_Val, Y=Y_Val, class_names=class_names, logdir=ConfMat_Path)
+# Define the per-epoch callback.
+# ConfMat_cb = tf.keras.callbacks.LambdaCallback(on_epoch_end=log_confusion_matrix)
+
+# add ConfMat_cb in the list of callbacks while training
+
+
 # In[5]:
 
 
@@ -43,7 +61,7 @@ def plot_confusion_matrix(cm, class_names):
     cm (array, shape = [n, n]): a confusion matrix of integer classes
     class_names (array, shape = [n]): String names of the integer classes
     """
-    figure = plt.figure(figsize=(8, 8))
+    figure = plt.figure(figsize=(0.75*len(class_names), 0.75*len(class_names)))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     plt.title("Confusion matrix")
     plt.colorbar()

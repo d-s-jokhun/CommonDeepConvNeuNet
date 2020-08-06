@@ -61,7 +61,7 @@ def plot_confusion_matrix(cm, class_names):
     cm (array, shape = [n, n]): a confusion matrix of integer classes
     class_names (array, shape = [n]): String names of the integer classes
     """
-    figure = plt.figure(figsize=(8, 8))
+    figure = plt.figure(figsize=(0.75*len(class_names), 0.75*len(class_names)))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
     plt.title("Confusion matrix")
     plt.colorbar()
