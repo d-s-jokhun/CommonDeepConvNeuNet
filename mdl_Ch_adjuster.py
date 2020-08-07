@@ -11,7 +11,7 @@ import Lambda_functions
 # In[15]:
 
 
-def mdl_nCh_adjuster (Input_ImgSize, Output_ImgSize):
+def mdl_Ch_adjuster (Input_ImgSize, Output_ImgSize):
         
     assert (len(Output_ImgSize)==3 and len(Output_ImgSize)==3), 'Input_ImgSize and Output_ImgSize each has to be a tuple or a list of 3 elements (height, width, num of channels)'
         
@@ -29,11 +29,11 @@ def mdl_nCh_adjuster (Input_ImgSize, Output_ImgSize):
         kernel_constraint=None, bias_constraint=None, name="SinglePixConv")(x) 
     
     Out=tf.keras.layers.Lambda(
-        Lambda_functions.Channel_GrayScale, name='Ch_GrayScale')(x)
+        Lambda_functions.Ch_Norm_255, name='Ch_Norm_255')(x)
     
-    mdl_nCh_adjuster = tf.keras.Model(inputs=In, outputs=Out, name="nCh_adjuster")
+    mdl_Ch_adjuster = tf.keras.Model(inputs=In, outputs=Out, name="Ch_adjuster")
     
-    return mdl_nCh_adjuster
+    return mdl_Ch_adjuster
 
 
 # In[ ]:
