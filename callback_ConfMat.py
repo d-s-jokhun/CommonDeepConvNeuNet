@@ -87,23 +87,34 @@ def plot_confusion_matrix(cm, class_names):
 # In[ ]:
 
 
-def callback_ConfMat(model, X, Y, class_names, logdir):
+def callback_ConfMat(model, dataset, class_names, logdir, freq=1):
     file_writer_cm = tf.summary.create_file_writer(logdir+'/ConfMat')
+    if type(freq)==type(None) or freq==[]:
+        freq=1
+
+    def datagen(dataset):
+        global Y_callback_ConfMat
+        Y_callback_ConfMat=[]
+        for batch in dataset:
+            X,lbl = batch
+            Y_callback_ConfMat.extend(lbl)
+            yield X
 
     def log_confusion_matrix(epoch, logs):
-        # Use the model to predict the values from the validation dataset.
-        pred_raw = model.predict(X)
-        pred = np.argmax(pred_raw, axis=1)
+        if epoch==0 or (epoch+1)%freq == 0:
+            # Use the model to predict the values from the validation dataset.
+            pred_raw = model.predict(datagen(dataset),steps=tf.data.experimental.cardinality(dataset))
+            pred = np.argmax(pred_raw, axis=1)
 
-        # Calculate the confusion matrix.
-        cm = sklearn.metrics.confusion_matrix(Y, pred)
-        # Log the confusion matrix as an image summary.
-        figure = plot_confusion_matrix(cm, class_names=class_names)
-        cm_image = plot_to_image(figure)
+            # Calculate the confusion matrix.
+            cm = sklearn.metrics.confusion_matrix(np.array(Y_callback_ConfMat), pred)
+            # Log the confusion matrix as an image summary.
+            figure = plot_confusion_matrix(cm, class_names=class_names)
+            cm_image = plot_to_image(figure)
 
-        # Log the confusion matrix as an image summary.
-        with file_writer_cm.as_default():
-            tf.summary.image("Confusion Matrix", cm_image, step=epoch)
+            # Log the confusion matrix as an image summary.
+            with file_writer_cm.as_default():
+                tf.summary.image("Confusion Matrix", cm_image, step=epoch)
     
     return log_confusion_matrix
 
