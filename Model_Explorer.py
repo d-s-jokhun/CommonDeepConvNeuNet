@@ -28,28 +28,30 @@ from Dataset_from_Dataframe import Dataset_from_Dataframe
 import pickle
 
 # os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"]="3"
+# os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 
 #%% Defining paths, loading dataframes and identifying classes
 
-MasterPath = pathlib.Path("/gpfs0/home/jokhun/fashion_mnist")
+MasterPath = pathlib.Path("/gpfs0/home/jokhun/Pro 1/U2OS small mol screening")
 # MasterPath = os.path.abspath('//deptnas.nus.edu.sg/BIE/MBELab/jokhun/Pro 1/U2OS small mol screening')
 
-Img_dir = str(MasterPath.joinpath('data_zipped'))
-DataFrame_Tr_path = MasterPath.joinpath('dataset_7000-7000_Tr.csv.xz')
-DataFrame_Val_path = MasterPath.joinpath('dataset_7000-7000_Val.csv.xz')
-DataFrame_Ts_path = MasterPath.joinpath('dataset_7000-7000_Ts.csv.xz')
+original_img_shape = (64,64,1)
+Img_dir = str(MasterPath.joinpath('Segmented_SmallMol'))
+DataFrame_Tr_path = MasterPath.joinpath('dataset_2501-3500_Tr.csv.xz')
+DataFrame_Val_path = MasterPath.joinpath('dataset_2501-3500_Val.csv.xz')
+DataFrame_Ts_path = MasterPath.joinpath('dataset_2501-3500_Ts.csv.xz')
 
-DataFrame_Tr = pd.read_csv(DataFrame_Tr_path)
-DataFrame_Val = pd.read_csv(DataFrame_Val_path)
-DataFrame_Ts = pd.read_csv(DataFrame_Ts_path)
+DataFrame_Tr = pd.read_csv(DataFrame_Tr_path)[:10000]
+DataFrame_Val = pd.read_csv(DataFrame_Val_path)[:5000]
+DataFrame_Ts = pd.read_csv(DataFrame_Ts_path)[:32]
 
 Classes_Tr = pd.DataFrame([os.path.dirname(Class)[2:-4] for Class in DataFrame_Tr['rel_path']],columns=['Classes'])
 Classes_Val = pd.DataFrame([os.path.dirname(Class)[2:-4] for Class in DataFrame_Val['rel_path']],columns=['Classes'])
 Classes_Ts = pd.DataFrame([os.path.dirname(Class)[2:-4] for Class in DataFrame_Ts['rel_path']],columns=['Classes'])
 
 print ('Training, validation and test dataframes loaded!')
+print (f'Train, Val and Test dataset sizes:\n {DataFrame_Tr.shape[0]}, {DataFrame_Val.shape[0]}, {DataFrame_Ts.shape[0]}')
 
 
 #%% Encoding labels and adding it to the respective dataframes
@@ -80,17 +82,24 @@ print('Decoded class from 1st label of DataFrame_Tr:',\
 
 #%% Instantiating datasets from dataframes
 
-batch_size_Tr = 512
-batch_size_Val = 1024
-shuffle_buffer_size = None#np.max([batch_size,NumOfClasses])*2
+batch_size = 1024
+shuffle_buffer_size = np.max([batch_size,NumOfClasses])*2
 
+print('batch_size =',batch_size)
+print(f'No. of training steps: {np.int(np.ceil(DataFrame_Tr.shape[0]/batch_size))}')
+print(f'No. of Validation steps: {np.int(np.ceil(DataFrame_Val.shape[0]/batch_size))}')
+print(f'No. of test steps: {np.int(np.ceil(DataFrame_Ts.shape[0]/batch_size))}')
+
+cache_file = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
 Dataset_Tr = Dataset_from_Dataframe(dataframe=DataFrame_Tr,Img_dir=Img_dir,\
-    batch_size=batch_size_Tr,shuffle=True,shuffle_buffer_size=shuffle_buffer_size)
+    batch_size=batch_size,shuffle=True,shuffle_buffer_size=shuffle_buffer_size,\
+        cache_path=str(MasterPath.joinpath(f'TmpCacheTr_{cache_file}')))        
 Dataset_Val = Dataset_from_Dataframe(dataframe=DataFrame_Val,Img_dir=Img_dir,\
-    batch_size=batch_size_Val,shuffle=False,shuffle_buffer_size=shuffle_buffer_size)\
-        .cache()
-# Dataset_Ts = Dataset_from_Dataframe(dataframe=DataFrame_Ts,Img_dir=Img_dir,\
-#     batch_size=batch_size,shuffle=False,shuffle_buffer_size=shuffle_buffer_size)
+    batch_size=batch_size,shuffle=False,shuffle_buffer_size=shuffle_buffer_size,\
+        cache_path=str(MasterPath.joinpath(f'TmpCacheVal_{cache_file}')))
+Dataset_Ts = Dataset_from_Dataframe(dataframe=DataFrame_Ts,Img_dir=Img_dir,\
+    batch_size=batch_size,shuffle=False,shuffle_buffer_size=shuffle_buffer_size,\
+        cache_path=str(MasterPath.joinpath(f'TmpCacheTs_{cache_file}')))
 print('Datasets created!')
 
 
@@ -116,12 +125,12 @@ UseExistingArchitectureCores = True
 models = {}
 keras_preprocess_layers = {}
 if UseExistingArchitectureCores:
-    models['Xception'] = tf.keras.applications.Xception(include_top=False, weights="imagenet", input_shape=(71, 71, 3)) #input_shape=(71, 71, 3)
-    keras_preprocess_layers['Xception'] = tf.keras.applications.xception.preprocess_input
+    # models['Xception_TransLrn'] = tf.keras.applications.Xception(include_top=False, weights="imagenet", input_shape=(71, 71, 3)) #input_shape=(71, 71, 3)
+    # keras_preprocess_layers['Xception_TransLrn'] = tf.keras.applications.xception.preprocess_input
     # models['InceptionV3'] = tf.keras.applications.InceptionV3(include_top=False, weights="imagenet", input_shape=(75, 75, 3)) #input_shape=(75, 75, 3)
     # keras_preprocess_layers['InceptionV3'] = tf.keras.applications.inception_v3.preprocess_input
-    # models['InceptionResNetV2'] = tf.keras.applications.InceptionResNetV2(include_top=False, weights="imagenet", input_shape=(75, 75, 3)) #input_shape=(75, 75, 3)
-    # keras_preprocess_layers['InceptionResNetV2'] = tf.keras.applications.inception_resnet_v2.preprocess_input
+    models['InceptionResNetV2_TransLrn'] = tf.keras.applications.InceptionResNetV2(include_top=False, weights="imagenet", input_shape=(75, 75, 3)) #input_shape=(75, 75, 3)
+    keras_preprocess_layers['InceptionResNetV2_TransLrn'] = tf.keras.applications.inception_resnet_v2.preprocess_input
     # models['ResNet50V2'] = tf.keras.applications.ResNet50V2(include_top=False, weights="imagenet", input_shape=(64, 64, 3)) #input_shape=(64, 64, 3)
     # keras_preprocess_layers['ResNet50V2'] = tf.keras.applications.resnet_v2.preprocess_input
     # models['DenseNet201'] = tf.keras.applications.DenseNet201(include_top=False, weights="imagenet", input_shape=(64, 64, 3)) #input_shape=(64, 64, 3)
@@ -198,7 +207,7 @@ if Edit_Core_Model:
 #%% Adding Top and Bottom layers to keras models instantiated above
 
 AddTopAndBottomLayers = True
-original_img_shape = (28,28,1) #(w, h, No._of_Ch)
+original_img_shape = original_img_shape #(w, h, No._of_Ch)
 if AddTopAndBottomLayers:
     ModelKeys=list(models.keys())
     for ModelKey in ModelKeys:
@@ -328,21 +337,21 @@ def train_model (model, Dataset_Tr, Dataset_Val, initial_epoch=0, final_epoch=5,
     )
 
     EarlyStop_cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', \
-        min_delta=0, patience=5, verbose=2, mode='auto',\
+        min_delta=0, patience=50, verbose=2, mode='auto',\
             baseline=None, restore_best_weights=True)
     
-    ConfMat_Path = os.path.join(Model_Path,"logs",(model.name+'_'+sess_DateTime))
-    log_confusion_matrix=callback_ConfMat(model, Dataset_Val, class_names=class_names, logdir=ConfMat_Path, freq=10)
-    # Define the per-epoch callback.
-    ConfMat_cb = tf.keras.callbacks.LambdaCallback(on_epoch_end=log_confusion_matrix)
+    # ConfMat_Path = os.path.join(Model_Path,"logs",(model.name+'_'+sess_DateTime))
+    # log_confusion_matrix=callback_ConfMat(model, Dataset_Val, class_names=class_names, logdir=ConfMat_Path, freq=10)
+    # # Define the per-epoch callback.
+    # ConfMat_cb = tf.keras.callbacks.LambdaCallback(on_epoch_end=log_confusion_matrix)
 
     PredLog_Path = os.path.join(Model_Path,"logs",(model.name+'_'+sess_DateTime))
-    pred_writer = callback_PredWriter(model, Dataset_Val, class_names=class_names, logdir=PredLog_Path, freq=10) #freq in epochs
+    pred_writer = callback_PredWriter(model, Dataset_Val, class_names=class_names, logdir=PredLog_Path, freq=5) #freq in epochs
     # Define the per-epoch callback.
     PredWriter_cb = tf.keras.callbacks.LambdaCallback(on_epoch_end=pred_writer)
         
     history = model.fit(Dataset_Tr, initial_epoch=initial_epoch, epochs=final_epoch, \
-        verbose=1, callbacks=[EarlyStop_cb, TensorBoard_cb, MdlChkpt_cb, PredWriter_cb, ConfMat_cb], 
+        verbose=1, callbacks=[EarlyStop_cb, TensorBoard_cb, MdlChkpt_cb, PredWriter_cb], # ,ConfMat_cb
         validation_data=Dataset_Val, validation_freq=1)        
     
     return history
@@ -380,7 +389,7 @@ if TrainNonCoreOnly:
 #%% Training non-core layers
 
 if TrainNonCoreOnly:
-    Epochs2TrainFor= 100
+    Epochs2TrainFor= 5
     
     Start=time.perf_counter()
     ModelKeys=list(models.keys())
@@ -439,7 +448,7 @@ if determine_accuracies:
 # Setting some layers of the core model as trainable
 FineTrainCoreLayers = True
 
-CoreModel_layer = CoreModel_layer
+# CoreModel_layer = -2
 FineTuneOnwards = {
     'Xception':-16, #-7
     'InceptionV3':-31,
@@ -448,23 +457,20 @@ FineTuneOnwards = {
     'DenseNet201':-9, #-16
     'NASNetLarge':0,
 }
-  
 
 if FineTrainCoreLayers:
     ModelKeys=list(models.keys())
     for ModelKey in ModelKeys:
         core_model = models[ModelKey].layers[CoreModel_layer]
         core_model.trainable = True
-        for layer in core_model.layers[:FineTuneOnwards[ModelKey]]:
+        TrainableLayers_Key = [Key for Key in list(FineTuneOnwards.keys()) if Key in ModelKey][0]
+        for layer in core_model.layers[:FineTuneOnwards[TrainableLayers_Key]]:
             layer.trainable =  False
-        print ('Appropriate layers after',FineTuneOnwards[ModelKey],'of',core_model.name,'have been set as trainable!')
+        print ('Appropriate layers after',FineTuneOnwards[TrainableLayers_Key],'of',core_model.name,'have been set as trainable!')
         models[ModelKey].compile(optimizer=tf.keras.optimizers.Adam(1e-5), 
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
                       metrics=['accuracy'])
         print (models[ModelKey].name,'has been recompiled!')
-
-
-#%% Displaying model summary after setting some layers as trainable
 
 if FineTrainCoreLayers:
     ModelKeys=list(models.keys())
@@ -475,7 +481,7 @@ if FineTrainCoreLayers:
 #%% Fine-tuning model
 
 if FineTrainCoreLayers:
-    Epochs2TrainFor= 50
+    Epochs2TrainFor= 5
 
     Start=time.perf_counter()
     ModelKeys=list(models.keys())
