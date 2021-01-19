@@ -32,11 +32,11 @@ class mdl_adapter_layers:
         return tf.keras.layers.Lambda(lambda image:
             Lambda_functions.Ch_Norm_255(image), name=name)  
 
-    def Ch_Adjuster(self, name=None):
+    def Ch_Adjuster(self, kernel_regularizer, name=None):
         return tf.keras.layers.Conv2D(filters=self.Output_ImgShape[-1], 
         kernel_size=1, strides=(1, 1), padding="same",data_format=None, 
         activation=None, use_bias=False, kernel_initializer="glorot_uniform", 
-        bias_initializer="zeros", kernel_regularizer=None, bias_regularizer=None, 
+        bias_initializer="zeros", kernel_regularizer=kernel_regularizer, bias_regularizer=None, 
         activity_regularizer=None, kernel_constraint=None, bias_constraint=None, 
         name=name)
         

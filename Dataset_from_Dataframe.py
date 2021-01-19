@@ -10,6 +10,7 @@ import io
 import zipfile
 # import Lambda_functions
 import multiprocessing as mp
+import tifffile
 
 
 #%%
@@ -59,7 +60,8 @@ class Dataset_from_Dataframe(tf.data.Dataset):
     
     def img_fetcher (Img_dir, rel_path):
         with zipfile.ZipFile(os.path.join(Img_dir.decode(),os.path.dirname(rel_path.decode()))) as archive:
-            img = np.array(Image.open(io.BytesIO(archive.read(os.path.basename(rel_path).decode())))).astype(np.float32)
+            # img = np.array(Image.open(io.BytesIO(archive.read(os.path.basename(rel_path).decode())))).astype(np.float32)
+            img = tifffile.imread(io.BytesIO(archive.read(os.path.basename(rel_path).decode()))).astype(np.float32)        
         return img
 
     def fetch_img(rel_path_batch, Img_dir, img_fetcher=img_fetcher):
@@ -68,7 +70,8 @@ class Dataset_from_Dataframe(tf.data.Dataset):
             img_batch = pool.starmap(img_fetcher,\
                 zip([Img_dir for rel_path in rel_path_batch],\
                     rel_path_batch))
-        return np.expand_dims(np.array(img_batch),-1)
+        return np.array(img_batch)
+        # return np.expand_dims(np.array(img_batch),-1)
 
     def __new__(cls, dataframe, Img_dir, batch_size, shuffle=False, shuffle_buffer_size=None,cache_path=None):
         AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -96,10 +99,11 @@ class Dataset_from_Dataframe(tf.data.Dataset):
             return tf.data.Dataset.from_tensor_slices(\
                 (dataframe['rel_path'], \
         dataframe['label']))\
-            .batch(batch_size)\
-                .map(fetch,num_parallel_calls=AUTOTUNE)\
+            .batch(dataframe.shape[0])\
+                .flat_map(fetch_as_DS)\
                     .cache(cache_path)\
-                        .prefetch(1)
+                        .batch(batch_size)\
+                            .prefetch(1)
                                     
 
 #%%

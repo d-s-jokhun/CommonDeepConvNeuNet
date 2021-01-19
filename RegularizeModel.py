@@ -21,9 +21,6 @@ def RegularizeModel(model, regularizer, keep_weights=True):
         print("Regularizer must be a subclass of tf.keras.regularizers.Regularizer")
         return model    
     
-#     Getting the parameters required for compiling the model later
-    optimizer,loss,metrics,loss_weights,weighted_metrics,run_eagerly = get_CompileParams(model).values()
-        
 #     Adding regularization if the layer is regularizable
     for layer in model.layers:
         if hasattr(layer, 'kernel_regularizer'):
@@ -37,19 +34,6 @@ def RegularizeModel(model, regularizer, keep_weights=True):
     else:
         model = tf.keras.models.Model.from_config(model.get_config()) # recreates the model from the updated config file
     
-#     Compiling the model using parameters obtained before reloading the updated model
-    if optimizer!=None:
-        model.compile(
-            optimizer = optimizer,
-            loss = loss,
-            metrics = metrics,
-            loss_weights = loss_weights,
-            weighted_metrics = weighted_metrics,
-            run_eagerly = run_eagerly
-        )
-        print ('Regularization successfully edited and model recompiled!')
-    else:
-        print ('Regularization successfully edited!')
        
     return model
 
