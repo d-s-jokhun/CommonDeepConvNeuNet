@@ -20,17 +20,24 @@ class mdl_adapter_layers:
         return tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal_and_vertical", name=name)
 
     def Im_Rotater(self, name=None):
-        return tf.keras.layers.experimental.preprocessing.RandomRotation(
-            0.5, fill_mode='constant', interpolation='bilinear', name=name)
+        rot_layer = tf.keras.layers.experimental.preprocessing.RandomRotation(0.5, fill_mode='constant', interpolation='bilinear')
+        def rotate (image, rot_layer=rot_layer):
+            rotated = tf.numpy_function(rot_layer, [image], tf.float32)
+            rotated.set_shape((None,*self.Output_ImgShape))
+            return rotated
+        return tf.keras.layers.Lambda(rotate, name=name)
 
     def Im_Resizer(self, name=None):
         return tf.keras.layers.Lambda(lambda image: tf.image.resize_with_pad(
             image, target_height=self.Output_ImgShape[1], target_width=self.Output_ImgShape[0],
             method=tf.image.ResizeMethod.BILINEAR, antialias=True), name=name)
     
-    def Int_Rescaler(self, name=None):
-        return tf.keras.layers.Lambda(lambda image:
-            Lambda_functions.Ch_Norm_255(image), name=name)  
+    def Int_Rescaler(self, name=None, Saturation=0):
+        def rescale (image, Saturation = Saturation):
+            rescaled = Lambda_functions.Ch_Norm_255(image, Saturation)
+            rescaled.set_shape((None,*self.Output_ImgShape))
+            return rescaled
+        return tf.keras.layers.Lambda(rescale, name=name)  
 
     def Ch_Adjuster(self, kernel_regularizer, name=None):
         return tf.keras.layers.Conv2D(filters=self.Output_ImgShape[-1], 
@@ -47,3 +54,8 @@ class mdl_adapter_layers:
 
 
 
+
+
+
+
+# %%
